@@ -19,6 +19,7 @@ static const double refreshtime = 0.5;
 static const int rowmax = 20; //change these accordingly
 static const int colmax = 14;
 static const int nextboxcolor = 47;
+static int partcolor =177;
 
 	void timeractions(void *p);
 
@@ -49,12 +50,11 @@ class MyPiece
 	public:
 		MyPiece(){
 			srand(time(NULL));
-			color = rand() % 6 + 1;// 0 to 255 represent colors Page 46 doc
-			//while(color == bgcolor || color == scorecolor || color == 0 )
-				//color = srand() % 7; // avoiding conflicting colors
+			color = rand() % 6 + 1;
+
 			int mid = colmax/2;
 			int choice = rand() % 7;
-			// Creating the 7 tetriminos
+			// Creating the 7 pieces
 			switch(choice)
 			{
 				// ---- (I)
@@ -88,11 +88,11 @@ class MyPiece
 						type = 3;
 						break;
 				//   --
-			    // --
+			  // --
 				case 4: tiles[0].setrow(0); tiles[0].setcol(mid);
 						tiles[1].setrow(0);	tiles[1].setcol(mid+1);
 						tiles[2].setrow(1);	tiles[2].setcol(mid);
-						tiles[3].setrow(1);	tiles[3].setcol(mid-1);
+						tiles[3].setrow(1);	tiles[3].setcol(mid-1 );
 						type = 4;
 						break;
 
@@ -112,18 +112,11 @@ class MyPiece
 						tiles[3].setrow(1);	tiles[3].setcol(mid+2);
 						type = 6;
 						break;
-
-
-
-
-
 			}
-
-
-
 		}
 
-  int get(unsigned int i , unsigned int var) { 		//1 means row and 2 means col
+  int get(unsigned int i , unsigned int var)
+	{ 		//1 means row and 2 means col
 		if(var == 1)
 			return tiles[i].getrow() ;
 		else if(var == 2)
@@ -132,54 +125,85 @@ class MyPiece
 			return -1 ;
 	}
 
-	int getColor() {  		//returns color of active piece
+	int getColor()
+	{  		//returns color of active piece
 		return color ;
 	}
-	char getType() {		//returns type of active piece
+
+	char getType()
+	{		//returns type of active piece
 		return type ;
 	}
 
-  void movedown(){
+  void movedown()
+	{
   	for(int i=0; i<4; i++) tiles[i].changerow(1);
   }
 
-  bool can_move_right(){
-    for(int i=0; i<4;i++){
-    	if(tiles[i].getcol() == colmax - 1) return false;
-
+  bool can_move_right()
+	{
+    for(int i=0; i<4;i++)
+		{
+    	if(tiles[i].getcol() == colmax - 1)
+				return false;
     }
     return true;
   }
 
-  bool can_move_left(){
-    for(int i=0; i<4;i++){
+  bool can_move_left()
+	{
+    for(int i=0; i<4;i++)
+		{
     	if(tiles[i].getcol() == 0) return false;
-
     }
     return true;
   }
 
-  void moveright(bool filled[rowmax][colmax]){
-    if(can_move_right()){ // check boundary condition
-      for(int i=0;i<4;i++){
-      	if(filled[tiles[i].getrow()][tiles[i].getcol() + 1] == true) // is there already a piece ?
-          return;
-      }
-      // possible to move
-      for(int i=0; i<4; i++) tiles[i].changecol(1);
-    }
-
+  void moveright(bool filled[rowmax][colmax])
+	{
+		try
+		{
+	    if(!can_move_right())
+			{
+				throw 1;
+	    }
+			// check boundary condition
+			for(int i=0;i<4;i++)
+			{
+				if(filled[tiles[i].getrow()][tiles[i].getcol() + 1] == true) // is there already a piece ?
+					return;
+			}
+			// possible to move
+			for(int i=0; i<4; i++)
+				tiles[i].changecol(1);
+		}
+		catch(int x)
+		{
+			partcolor = x;
+		}
   }
-  void moveleft(bool filled[rowmax][colmax]){
-    if(can_move_left()){ // check boundary condition
-      for(int i=0;i<4;i++){
-      	if(filled[tiles[i].getrow()][tiles[i].getcol() - 1] == true) // is there already a piece ?
-          return;
-      }
-      // possible to move
-      for(int i=0; i<4; i++) tiles[i].changecol(-1);
-    }
-
+  void moveleft(bool filled[rowmax][colmax])
+	{
+		try
+		{
+	    if(!can_move_left())
+			{
+				throw 1;
+	    }
+			// check boundary condition
+			for(int i=0;i<4;i++)
+			{
+				if(filled[tiles[i].getrow()][tiles[i].getcol() - 1] == true) // is there already a piece ?
+					return;
+			}
+			// possible to move
+			for(int i=0; i<4; i++)
+				tiles[i].changecol(-1);
+		}
+		catch(int x)
+		{
+			partcolor = x;
+		}
   }
 
   bool can_rotate_cw(int afterrotate[][2], bool filled[rowmax][colmax], int pivr, int pivc){
@@ -202,29 +226,86 @@ class MyPiece
 				return false ;
 		}
 		return true ;
-
   }
 
-  void rotate_cw(bool filled[rowmax][colmax]){
+	bool can_rotate_acw(int afterrotate[][2], bool filled[rowmax][colmax], int pivr, int pivc)
+	{
+		int coldiff[4];
+		int rowdiff[4];
+		for(int i=0;i<4;i++){
+			rowdiff[i] = pivr - tiles[i].getrow();
+			coldiff[i] = tiles[i].getcol() - pivc;
+		}
+		for(int i=0;i<4;i++)
+		{
+			afterrotate[i][0] = pivr - coldiff[i]; // new row
+			afterrotate[i][1] = pivc - rowdiff[i]; // new col
+		}
+
+		for(int i = 0 ; i < 3 ; i++) {
+		//check boundary
+		if(afterrotate[i][0] >= rowmax || afterrotate[i][0] <= 0 || afterrotate[i][1] >= colmax || afterrotate[i][1] <= 0
+			 || filled[afterrotate[i][0]][afterrotate[i][1]] == true)
+			return false ;
+		}
+		return true ;
+	}
+
+  void rotate_cw(bool filled[rowmax][colmax])
+	{
   		int afterrotate[4][2];
   		int pivr,pivc;
   		// We choose tiles[2] as pivot and rotate wrt it.
   		pivr = tiles[2].getrow();
   		pivc = tiles[2].getcol();
-  		if(type!=3){
-  			if(can_rotate_cw(afterrotate, filled, pivr, pivc)){
-  				tiles[0].setrow(afterrotate[0][0]) ; tiles[0].setcol(afterrotate[0][1]) ;
-				tiles[1].setrow(afterrotate[1][0]) ; tiles[1].setcol(afterrotate[1][1]) ;
-				tiles[3].setrow(afterrotate[3][0]) ; tiles[3].setcol(afterrotate[2][1]) ;
-  			}
-
+  		if(type!=3)
+			{
+				try
+				{
+	  			if(!can_rotate_cw(afterrotate, filled, pivr, pivc))
+					{
+	  				throw 1;
+	  			}
+					tiles[0].setrow(afterrotate[0][0]) ; tiles[0].setcol(afterrotate[0][1]) ;
+					tiles[1].setrow(afterrotate[1][0]) ; tiles[1].setcol(afterrotate[1][1]) ;
+					tiles[3].setrow(afterrotate[3][0]) ; tiles[3].setcol(afterrotate[3][1]) ;
+				}
+				catch(int x)
+				{
+					partcolor = x;
+				}
   		}
-
-
   }
 
+	void rotate_acw(bool filled[rowmax][colmax])
+	{
+		int afterrotate[4][2];
+		int pivr,pivc;
+		// We choose tiles[2] as pivot and rotate wrt it.
+		pivr = tiles[2].getrow();
+		pivc = tiles[2].getcol();
 
-
+		if(type!=3)
+		{
+			try
+			{
+				if(!can_rotate_acw(afterrotate, filled, pivr, pivc))
+				{
+					throw 1;
+				}
+				for(int i=0;i<3;i++)
+				{
+					tiles[0].setrow(afterrotate[0][0]) ; tiles[0].setcol(afterrotate[0][1]) ;
+					tiles[1].setrow(afterrotate[1][0]) ; tiles[1].setcol(afterrotate[1][1]) ;
+					tiles[3].setrow(afterrotate[3][0]) ; tiles[3].setcol(afterrotate[3][1]) ;
+				}
+			}
+			catch(int x)
+			{
+				partcolor = x;
+			}
+		}
+	}
 };
 
 class Board : public Fl_Widget
@@ -285,10 +366,9 @@ class Board : public Fl_Widget
       for(j=0; j<colmax; j++)
     	{
         if(fillcolor[i][j] != bgcolor)
-          fl_draw_box(FL_BORDER_BOX, j*tilesize, i*tilesize, tilesize, tilesize, fillcolor[i][j]);
-
-      		else
-            fl_draw_box(FL_FLAT_BOX, j*tilesize, i*tilesize, tilesize, tilesize, fillcolor[i][j]);
+          fl_draw_box(FL_BORDER_BOX, 5 + j*tilesize, i*tilesize-5, tilesize, tilesize, fillcolor[i][j]);
+				else
+          fl_draw_box(FL_FLAT_BOX, 5 + j*tilesize, i*tilesize-5, tilesize, tilesize, fillcolor[i][j]);
     	}
 
   //Next Piece Box
@@ -297,13 +377,16 @@ class Board : public Fl_Widget
      {
 				if(nextPiece[i][j] != nextboxcolor)
 					fl_draw_box(FL_BORDER_BOX, (j + colmax + 4)*tilesize, (i + rowmax/2 + 2)*tilesize, tilesize, tilesize, nextPiece[i][j]);
-					else
-						fl_draw_box(FL_FLAT_BOX, (j + colmax + 4 )*tilesize, (i + rowmax/ 2 + 2)*tilesize , tilesize, tilesize, nextPiece[i][j]);
+				else
+					fl_draw_box(FL_FLAT_BOX, (j + colmax + 4 )*tilesize, (i + rowmax/ 2 + 2)*tilesize , tilesize, tilesize, nextPiece[i][j]);
 			}
 
 
-  //For the partition line
-		fl_draw_box(FL_FLAT_BOX, colmax*tilesize + 5, 0, 5, rowmax*tilesize, 177) ;
+  //For the partition border
+		fl_draw_box(FL_FLAT_BOX, colmax*tilesize + 5, 0, 5, rowmax*tilesize, partcolor);
+		fl_draw_box(FL_FLAT_BOX, 0, 0, 5, rowmax*tilesize, partcolor);
+		fl_draw_box(FL_FLAT_BOX, 5, 0, colmax*tilesize, 5, partcolor);
+		fl_draw_box(FL_FLAT_BOX, 5, rowmax*tilesize-5, colmax*tilesize, 5, partcolor);
   }
 
   void transferTiles()
@@ -391,12 +474,12 @@ class Board : public Fl_Widget
           							drawTile();
           							break;
         							}
-        // case FL_Down: {
-          							// deleteTile();
-          							// currentpiece.rotate_acw(fillcolor,filled);
-          							// drawTile();
-          							// break;
-        							// }
+        case FL_Down: {
+          							deleteTile();
+          							currentpiece.rotate_acw(filled);
+          							drawTile();
+          							break;
+        							}
         case 32:			{
           							while(candown() == true)
                         {
@@ -431,6 +514,7 @@ class Board : public Fl_Widget
 
 	void periodic()
 	{
+		partcolor =177;
 	  	if(candown())
 	    { deleteTile();
 				currentpiece.movedown();
@@ -477,7 +561,6 @@ class Board : public Fl_Widget
 	        case 6: nextPiece[1][1] = nextPiece[1][2] = nextPiece[2][2] = nextPiece[2][3] = nextpiece.getColor();
 	         			  break;
 	       }
-
 	    }
 		  stringstream strs;
 			strs << (int)score;
@@ -506,7 +589,7 @@ int main()
 
   Board* B = new Board();
 
-  Fl_Box* scorebox = new Fl_Box(tilesize*colmax+100,100,200,50,"Score : 0\0") ;
+  Fl_Box* scorebox = new Fl_Box(tilesize*colmax+40,100,320,80,"Score : 0\0") ;
 
   scorebox -> box(FL_OVAL_BOX) ;
   scorebox -> labelfont(FL_BOLD) ;
