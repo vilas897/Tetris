@@ -35,4 +35,4 @@ The user can interact using the following keys
 
 ## Screenshots
 
-![Screenshot](Screenshots/screensshot-1.png)
+![Screenshot](Screenshots/screenshot-1.png)
