@@ -451,8 +451,9 @@ class Board : public Fl_Widget
 
   int handle(int e)
   {
-    if(e == FL_KEYDOWN)
+    if(e == 12)
     {
+
       switch(Fl::event_key())
       {
         case FL_Escape: exit(1);
